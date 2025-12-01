@@ -1,0 +1,38 @@
+name: Deploy to Netlify
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # Caching is disabled to ensure reliability if no lockfile exists
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Tests
+        run: npm test --if-present
+
+      - name: Build and Deploy
+        env:
+          # Infrastructure Secrets
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          # Application Secrets (Used during build)
+          NEXT_PUBLIC_GREETING: ${{ secrets.NEXT_PUBLIC_GREETING }}
+        run: |
+          npm install -g netlify-cli
+          # The --build flag builds the Next.js app and handles strict plugin/SSR requirements
+          netlify deploy --build --prod
